@@ -1,0 +1,15 @@
+[package]
+name = "outlast-watcher"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+reqwest = "0.11.14"
+select = "0.6.0"
+tokio = {version = "1.24.2",features = ["full"] }
+notify-rust = "4"
+winapi = {version = "0.3.9", features = ["wincon", "winuser"]}
+rand = "0.7.3"
+
