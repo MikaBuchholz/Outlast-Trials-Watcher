@@ -15,27 +15,26 @@ const EMOJI_BUFFER: &[&str] = &[
 ];
 const EMOJI_BUFFER_LEN: usize = EMOJI_BUFFER.len();
 
-async fn get_release_date(document: Document) -> Option<String> {
-    let mut release: Option<String> = Some(String::with_capacity(20));
+async fn get_release_date(document: Document) -> bool {
+    for node in &document.nodes {
+        match &node.data {
+            Data::Text(text) => {
+                let text_content = text.trim().to_string();
 
-    if !&document.nodes.len() <= 1103 {
-        return None;
+                if text_content
+                    .to_lowercase()
+                    .contains(&NO_DEF_RELEASE.to_lowercase())
+                {
+                    return false;
+                }
+            }
+
+            Data::Element(_, _) => {}
+            Data::Comment(_) => {}
+        };
     }
 
-    let node = &document.nodes[1103];
-
-    match &node.data {
-        Data::Text(text) => {
-            let text_content = text.trim().to_string();
-
-            release = Some(text_content);
-        }
-
-        Data::Element(_, _) => {}
-        Data::Comment(_) => {}
-    };
-
-    release
+    true
 }
 
 fn dispatch_notification(summary: &str, body: &str) {
@@ -65,26 +64,20 @@ async fn main() {
                             Ok(doc) => {
                                 let release = get_release_date(doc).await;
 
-                                if release.is_some() {
-                                    let release_text =
-                                        if !release.clone().unwrap().contains(NO_DEF_RELEASE) {
-                                            format!(
-                                                "Outlast Trials will be released on: {}",
-                                                release.unwrap()
-                                            )
-                                        } else {
-                                            format!(
-                                                "Release date not known {}",
-                                                EMOJI_BUFFER[rand::thread_rng()
-                                                    .gen_range(0, EMOJI_BUFFER_LEN)]
-                                            )
-                                        };
+                                let release_text = if release {
+                                    "Outlast Trials release date is known!".into()
+                                } else {
+                                    format!(
+                                        "Release date not known {}",
+                                        EMOJI_BUFFER
+                                            [rand::thread_rng().gen_range(0, EMOJI_BUFFER_LEN)]
+                                    )
+                                };
 
-                                    dispatch_notification(
-                                        "Outlast Trials release update!",
-                                        &release_text,
-                                    );
-                                }
+                                dispatch_notification(
+                                    "Outlast Trials release update!",
+                                    &release_text,
+                                );
                             }
                             Err(_) => dispatch_notification(
                                 "Outlast-Watcher Error",
@@ -101,6 +94,6 @@ async fn main() {
                 dispatch_notification("Outlast-Watcher Error", "Failed to request page content")
             }
         };
-        thread::sleep(time::Duration::from_secs(600));
+        thread::sleep(time::Duration::from_secs(3600));
     }
 }
